@@ -14,7 +14,7 @@ option(CLIPPER2_HI_PRECISION "Caution: enabling this will compromise performance
 
 option(CLIPPER2_UTILS "Build utilities" ON)
 option(CLIPPER2_EXAMPLES "Build examples" ON)
-option(CLIPPER2_TESTS "Build tests" ON)
+option(CLIPPER2_TESTS "Build tests" OFF)
 option(USE_EXTERNAL_GTEST "Use system-wide installed GoogleTest" OFF)
 option(USE_EXTERNAL_GBENCHMARK "Use the googlebenchmark" OFF)
 option(BUILD_SHARED_LIBS "Build shared libs" OFF)
@@ -159,19 +159,41 @@ if(CLIPPER2_EXAMPLES)
 
   set(ALL_EXAMPLES "") # 2d and 3d examples (if enabled)
 
+  include(FetchContent)
+
+  FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp.git
+    GIT_TAG master # Can be a tag (yaml-cpp-x.x.x), a commit hash, or a branch name (master)
+  )
+  FetchContent_GetProperties(yaml-cpp)
+
+  if(NOT yaml-cpp_POPULATED)
+    message(STATUS "Fetching yaml-cpp...")
+    FetchContent_Populate(yaml-cpp)
+    add_subdirectory(${yaml-cpp_SOURCE_DIR} ${yaml-cpp_BINARY_DIR})
+  endif()
+
+  # target_link_libraries(YOUR_LIBRARY PUBLIC yaml-cpp::yaml-cpp) # The library or executable that require yaml-cpp library
+
+
   if (NOT (CLIPPER2_USINGZ STREQUAL "ONLY"))
     set(EXAMPLES
-      Benchmarks
-      Inflate
-      MemLeakTest
-      PolygonSamples
-      RandomClipping
-      UnionClipping
-      RectClipping
-      SimpleClipping
-      VariableOffset
+      # Benchmarks
+      # Inflate
+      # MemLeakTest
+      # PolygonSamples
+      # RandomClipping
+      # UnionClipping
+      # RectClipping
+      # SimpleClipping
+      # VariableOffset
+      test
     )
 
+    add_executable(readFromYaml Examples/test/readFromYaml.cpp)
+    target_link_libraries(readFromYaml PUBLIC yaml-cpp::yaml-cpp)
+    target_link_libraries(readFromYaml PRIVATE Clipper2 Clipper2utils)
     foreach(ex ${EXAMPLES})
       add_executable(${ex} Examples/${ex}/${ex}.cpp)
       target_link_libraries(${ex} PRIVATE Clipper2 Clipper2utils)

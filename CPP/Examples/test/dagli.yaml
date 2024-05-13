@@ -1,0 +1,159 @@
+sheet:
+  width: 60
+  height: 300
+parts:
+  - id: 1
+    outsideLoop:
+      - x: 0
+        y: 8
+      - x: 1
+        y: 7
+      - x: 7
+        y: 5
+      - x: 12
+        y: 0
+      - x: 15
+        y: 3
+      - x: 10
+        y: 8
+      - x: 11
+        y: 9
+      - x: 1
+        y: 9
+    quantity: 3
+  - id: 2
+    outsideLoop:
+      - x: 2
+        y: 12
+      - x: 0
+        y: 0
+      - x: 4
+        y: 0
+      - x: 4
+        y: 1
+      - x: 5
+        y: 1
+      - x: 5
+        y: 0
+      - x: 9
+        y: 0
+      - x: 9
+        y: 2
+      - x: 5
+        y: 12
+    quantity: 3
+  - id: 3
+    outsideLoop:
+      - x: 2
+        y: 24
+      - x: 0
+        y: 18
+      - x: 0
+        y: 6
+      - x: 2
+        y: 0
+      - x: 9
+        y: 0
+      - x: 11
+        y: 6
+      - x: 11
+        y: 18
+      - x: 9
+        y: 24
+    quantity: 3
+  - id: 4
+    outsideLoop:
+      - x: 0
+        y: 15
+      - x: 0
+        y: 0
+      - x: 14
+        y: 0
+      - x: 14
+        y: 15
+    quantity: 3
+  - id: 5
+    outsideLoop:
+      - x: 0
+        y: 0
+      - x: 9
+        y: 0
+      - x: 7
+        y: 5
+      - x: 2
+        y: 5
+    quantity: 3
+  - id: 6
+    outsideLoop:
+      - x: 0
+        y: 32
+      - x: 1
+        y: 3
+      - x: 3
+        y: 0
+      - x: 6
+        y: 1
+      - x: 11
+        y: 11
+      - x: 5
+        y: 31
+      - x: 2
+        y: 33
+    quantity: 3
+  - id: 7
+    outsideLoop:
+      - x: 0
+        y: 3
+      - x: 5
+        y: 0
+      - x: 23
+        y: 0
+      - x: 13
+        y: 5
+      - x: 1
+        y: 5
+    quantity: 3
+  - id: 8
+    outsideLoop:
+      - x: 1
+        y: 0
+      - x: 4
+        y: 0
+      - x: 5
+        y: 6
+      - x: 4
+        y: 6
+      - x: 4
+        y: 5
+      - x: 3
+        y: 4
+      - x: 2
+        y: 4
+      - x: 1
+        y: 5
+      - x: 1
+        y: 6
+      - x: 0
+        y: 6
+    quantity: 3
+  - id: 9
+    outsideLoop:
+      - x: 0
+        y: 2
+      - x: 1
+        y: 0
+      - x: 8
+        y: 0
+      - x: 6
+        y: 3
+    quantity: 3
+  - id: 10
+    outsideLoop:
+      - x: 0
+        y: 0
+      - x: 14
+        y: 0
+      - x: 5
+        y: 6
+    quantity: 3
+

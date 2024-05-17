@@ -8,15 +8,14 @@
 #include "../../Utils/clipper.svg.utils.h"
 #include "../../Utils/ClipFileLoad.h"
 #include "../../Utils/ClipFileSave.h"
-#include <filesystem>
-#include <string>
 
-using namespace std::filesystem;
 using namespace std;
 using namespace Clipper2Lib;
 
 struct Coordinate
 {
+    double point1_X;
+    double point1_Y;
     int rotation;
     double point2_X;
     double point2_Y;
@@ -55,10 +54,10 @@ void parseYAML(const std::string &filename, Sheet &sheet)
     sheet.width = config["sheet"]["width"].as<double>();
     sheet.height = config["sheet"]["height"].as<double>();
 
-    double scale = 512.0 * 512.0 / sheet.width / sheet.height;
-    sheet.width *= scale;
-    sheet.height *= scale;
-    // double scale = 1.0;
+    // double scale = 512.0 * 512.0 / sheet.width / sheet.height;
+    // sheet.width *= scale;
+    // sheet.height *= scale;
+    double scale = 1.0;
 
     // Parse parts data
     for (const auto &partNode : config["parts"])
@@ -235,13 +234,12 @@ PathsD RotatePaths(const PathsD &paths, double angle)
     }
     return rotatedPaths;
 }
-
-void Nesting(std::string filename)
+int main()
 {
     // 0.解析YAML，读取多边形数据。规定外边界均为逆时针，内边界顺时针
     Sheet sheet;
     int Rotations = 4;
-    parseYAML(filename, sheet);
+    parseYAML("/Users/gzz/Clipper2/CPP/Examples/test/albano.yaml", sheet);
 
     // Access parsed data
     std::cout << "Sheet Width: " << sheet.width << std::endl;
@@ -270,107 +268,106 @@ void Nesting(std::string filename)
     {
         auto &orbitingPart = *it1;
         int rotation;
-        // TODO 加旋转
-        // for (int i = 0; i < Rotations; ++i)
-        // {
-        //     rotation = i * 360.0 / Rotations;
-
-        // }
-
+        Coordinate placedPoint;
         // 计算orbitingPart和surface的ifp
         for (int i = 0; i < orbitingPart.quantity; ++i)
         {
-            if (Area(surface) < 0)
+            for (int i = 0; i < Rotations; ++i)
             {
-                std::reverse(surface.begin(), surface.end());
-            }
-            PathsD ifp = MinkowskiSum(orbitingPart.outsideLoop, surface, true);
-            if (Area(ifp[1]) < 0)
-            {
-                std::reverse(ifp[1].begin(), ifp[1].end());
-            }
-            RectD ifpRect = GetBounds(ifp[1]);
-            RectD surfaceRect = GetBounds(surface);
-            ifp[1] = TranslatePath(ifp[1], 0 - ifpRect.left, 0 - ifpRect.bottom);
-            PathsD temp;
-            temp.push_back(ifp[1]);
+                std::pair<double, double> best = {sheet.width, sheet.height};
+                rotation = i * 360.0 / Rotations;
+                PathD orbitingPartOutsideLoop = RotatePath(orbitingPart.outsideLoop, rotation);
+                RectD oPartRect = GetBounds(orbitingPartOutsideLoop);
+                orbitingPartOutsideLoop = TranslatePath(orbitingPartOutsideLoop, -oPartRect.left, -oPartRect.bottom);
 
-            RectD orbitingPartRect = GetBounds(orbitingPart.outsideLoop);
-
-            PathsD nfps;
-            PathsD ifps;
-            ifps = Difference(temp, ifps, FillRule::NonZero);
-
-            // 计算orbit和station的nfp以及与孔洞的ifp
-            SvgWriter svg1;
-            PathsD temp1;
-            // temp1.push_back(surface);
-            for (auto it2 = partsCoordinate.begin(); it2 != partsCoordinate.end(); ++it2)
-            {
-
-                Part stationPart;
-                PathD stationPartOutsideLoop;
-                PathsD stationPartInsideLoops;
-
-                for (int i = 0; i < std::get<1>(*it2); ++i)
+                if (Area(surface) < 0)
                 {
-                    stationPart = std::get<0>(*it2);
-                    if (Area(stationPart.insideLoops) < 0)
-                    {
-                        std::reverse(stationPart.insideLoops.begin(), stationPart.insideLoops.end());
-                    }
+                    std::reverse(surface.begin(), surface.end());
+                }
+                PathsD ifp = MinkowskiSum(orbitingPartOutsideLoop, surface, true);
+                if (Area(ifp[1]) < 0)
+                {
+                    std::reverse(ifp[1].begin(), ifp[1].end());
+                }
+                RectD ifpRect = GetBounds(ifp[1]);
+                RectD surfaceRect = GetBounds(surface);
+                ifp[1] = TranslatePath(ifp[1], 0 - ifpRect.left, 0 - ifpRect.bottom);
+                PathsD temp;
+                temp.push_back(ifp[1]);
 
-                    stationPartOutsideLoop = TranslatePath(stationPart.outsideLoop, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
-                    if (!stationPart.insideLoops.empty())
-                    {
-                        stationPartInsideLoops = TranslatePaths(stationPart.insideLoops, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
-                    }
-                    else
-                    {
-                        stationPartInsideLoops.clear();
-                    }
-                    PathD orbitingLoop = MirrorPolygon(orbitingPart.outsideLoop, 0.0, 0.0);
+                PathsD nfps;
+                PathsD ifps;
+                ifps = Difference(temp, ifps, FillRule::NonZero);
 
-                    PathsD nfp = MinkowskiSum(stationPartOutsideLoop, orbitingLoop, true);
+                // 计算orbit和station的nfp以及与孔洞的ifp
+                for (auto it2 = partsCoordinate.begin(); it2 != partsCoordinate.end(); ++it2)
+                {
 
-                    PathsD nfpOutsideLoop;
-                    nfpOutsideLoop.push_back(nfp[0]);
+                    Part stationPart;
+                    PathD stationPartOutsideLoop;
+                    PathsD stationPartInsideLoops;
 
-                    nfps = Union(nfps, nfpOutsideLoop, FillRule::NonZero);
-                    PathsD ifp;
-                    PathsD ifp_trans;
-                    for (const auto &stationInsideLoop : stationPartInsideLoops)
+                    for (int i = 0; i < std::get<1>(*it2); ++i)
                     {
-                        if (std::abs(Area(stationInsideLoop)) > std::abs(Area(orbitingPart.outsideLoop)))
+                        stationPart = std::get<0>(*it2);
+                        if (Area(stationPart.insideLoops) < 0)
                         {
-                            ifp = MinkowskiSum(stationInsideLoop, orbitingLoop, true);
-                            // ifp_trans = TranslatePaths(ifp, -orbitingPartRect.left, -orbitingPartRect.bottom);
+                            std::reverse(stationPart.insideLoops.begin(), stationPart.insideLoops.end());
+                        }
 
-                            if (ifp.size() > 1)
+                        stationPartOutsideLoop = RotatePath(stationPart.outsideLoop, std::get<2>(*it2).rotation);
+                        stationPartOutsideLoop = TranslatePath(stationPartOutsideLoop, std::get<2>(*it2).point1_X, std::get<2>(*it2).point1_Y);
+                        stationPartOutsideLoop = TranslatePath(stationPartOutsideLoop, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
+
+                        if (!stationPart.insideLoops.empty())
+                        {
+                            stationPartInsideLoops = RotatePaths(stationPart.insideLoops, std::get<2>(*it2).rotation);
+                            stationPartInsideLoops = TranslatePaths(stationPartInsideLoops, std::get<2>(*it2).point1_X, std::get<2>(*it2).point1_Y);
+                            stationPartInsideLoops = TranslatePaths(stationPartInsideLoops, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
+                        }
+                        else
+                        {
+                            stationPartInsideLoops.clear();
+                        }
+                        PathD orbitingLoop = MirrorPolygon(orbitingPartOutsideLoop, 0.0, 0.0);
+
+                        PathsD nfp = MinkowskiSum(stationPartOutsideLoop, orbitingLoop, true);
+
+                        PathsD nfpOutsideLoop;
+                        nfpOutsideLoop.push_back(nfp[0]);
+
+                        nfps = Union(nfps, nfpOutsideLoop, FillRule::NonZero);
+
+                        for (const auto &stationInsideLoop : stationPartInsideLoops)
+                        {
+                            if (std::abs(Area(stationInsideLoop)) > std::abs(Area(orbitingPartOutsideLoop)))
                             {
-                                // ifpOutsideLoop.push_back(ifp[1]);
-                                ifp_trans.push_back(ifp[1]);
+                                PathsD ifp = MinkowskiSum(stationInsideLoop, orbitingPartOutsideLoop, true);
 
-                                nfps = Difference(nfps, ifp_trans, FillRule::NonZero);
+                                nfps = Difference(nfps, ifp, FillRule::NonZero);
                             }
                         }
                     }
                 }
+                if (Area(ifps) < 0)
+                {
+                    std::reverse(ifps.begin(), ifps.end());
+                }
+                PathsD placeableArea = Difference(ifps, nfps, FillRule::NonZero);
+                std::cout << orbitingPart.id << std::endl;
+                // std::cout << placeableArea << std::endl;
+                std::pair<double, double> result = findClosestCoordinate(placeableArea, 0.0, 0.0);
+
+                if (result.first < best.first)
+                {
+                    best = result;
+                    placedPoint.point1_X = -oPartRect.left;
+                    placedPoint.point1_Y = -oPartRect.bottom;
+                    placedPoint.rotation = rotation;
+                    placedPoint.point2_X = best.first;
+                    placedPoint.point2_Y = best.second;
+                }
             }
-            if (Area(ifps) < 0)
-            {
-                std::reverse(ifps.begin(), ifps.end());
-            }
-            PathsD placeableArea = Difference(ifps, nfps, FillRule::NonZero);
-            std::cout << orbitingPart.id << std::endl;
-            // std::cout << placeableArea << std::endl;
-
-            std::pair<double, double> best = findClosestCoordinate(placeableArea, 0.0, 0.0);
-
-            Coordinate placedPoint;
-            placedPoint.point2_X = best.first;
-            placedPoint.point2_Y = best.second;
-
             partsCoordinate.emplace_back(orbitingPart, orbitingPart.quantity, placedPoint);
         }
     }
@@ -392,13 +389,20 @@ void Nesting(std::string filename)
             {
                 std::reverse(stationPart.insideLoops.begin(), stationPart.insideLoops.end());
             }
+            stationPartOutsideLoop = RotatePath(stationPart.outsideLoop, std::get<2>(*it2).rotation);
+            stationPartOutsideLoop = TranslatePath(stationPartOutsideLoop, std::get<2>(*it2).point1_X, std::get<2>(*it2).point1_Y);
+            stationPartOutsideLoop = TranslatePath(stationPartOutsideLoop, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
 
-            stationPartOutsideLoop = TranslatePath(stationPart.outsideLoop, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
             if (!stationPart.insideLoops.empty())
             {
-                stationPartInsideLoops = TranslatePaths(stationPart.insideLoops, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
+                stationPartInsideLoops = RotatePaths(stationPart.insideLoops, std::get<2>(*it2).rotation);
+                stationPartInsideLoops = TranslatePaths(stationPartInsideLoops, std::get<2>(*it2).point1_X, std::get<2>(*it2).point1_Y);
+                stationPartInsideLoops = TranslatePaths(stationPartInsideLoops, std::get<2>(*it2).point2_X, std::get<2>(*it2).point2_Y);
             }
-
+            else
+            {
+                stationPartInsideLoops.clear();
+            }
             temp = stationPartInsideLoops;
             temp.push_back(stationPartOutsideLoop);
             SvgAddSubject(svg2, temp, FillRule::NonZero);
@@ -406,17 +410,6 @@ void Nesting(std::string filename)
     }
     temp.push_back(surface);
     SvgAddSubject(svg2, temp, FillRule::NonZero);
-    SvgSaveToFile(svg2, sheet.name + ".svg", sheet.width, sheet.height, 0);
-}
-
-int main()
-{
-    std::string directory = "/Users/gzz/Clipper2/CPP/Examples/test/ikzao";
-    for (const auto &entry : std::filesystem::directory_iterator(directory))
-    {
-        if (entry.is_regular_file() && entry.path().extension() == ".yaml")
-        {
-            Nesting(entry.path().string());
-        }
-    }
+    SvgSaveToFile(svg2, sheet.name + "_1.svg", sheet.width, sheet.height, 0);
+    return 0;
 }

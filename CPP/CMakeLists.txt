@@ -191,9 +191,24 @@ if(CLIPPER2_EXAMPLES)
       test
     )
 
+    # 查找 GTK+ 3.0 包
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(GTK REQUIRED gtk+-3.0)
+
+    # 添加编译标志和链接标志
+    include_directories(${GTK_INCLUDE_DIRS})
+    link_directories(${GTK_LIBRARY_DIRS})
+    add_definitions(${GTK_CFLAGS_OTHER})
+
+    add_executable(randomYaml Examples/test/randomYaml.cpp)
+    target_link_libraries(randomYaml PUBLIC yaml-cpp::yaml-cpp)
+    # target_link_libraries(randomYaml PRIVATE Clipper2 Clipper2utils)
+
     add_executable(readFromYaml Examples/test/readFromYaml.cpp)
     target_link_libraries(readFromYaml PUBLIC yaml-cpp::yaml-cpp)
     target_link_libraries(readFromYaml PRIVATE Clipper2 Clipper2utils)
+    # 链接 GTK+ 3.0 库
+    target_link_libraries(readFromYaml ${GTK_LIBRARIES})
 
     add_executable(rotation_Nesting Examples/test/rotation_Nesting.cpp)
     target_link_libraries(rotation_Nesting PUBLIC yaml-cpp::yaml-cpp)

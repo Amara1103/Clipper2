@@ -10,7 +10,7 @@
 #include "../../Utils/ClipFileSave.h"
 #include <filesystem>
 #include <string>
-
+#include <thread>
 using namespace std::filesystem;
 using namespace std;
 using namespace Clipper2Lib;
@@ -252,6 +252,7 @@ void Nesting(std::string filename)
 
     // 1.按照面积大小进行排序
     std::sort(sheet.parts.begin(), sheet.parts.end(), compareByArea);
+    std::cout << "Rank end!" << std::endl;
 
     // 标记未放置的零件
     std::unordered_map<std::string, int> notNestedParts;
@@ -411,12 +412,25 @@ void Nesting(std::string filename)
 
 int main()
 {
-    std::string directory = "/Users/gzz/Clipper2/CPP/Examples/test/ikzao";
+    std::string directory = "/Users/gzz/Clipper2/CPP/Examples/test/random";
+    std::vector<std::string> files;
     for (const auto &entry : std::filesystem::directory_iterator(directory))
     {
         if (entry.is_regular_file() && entry.path().extension() == ".yaml")
         {
-            Nesting(entry.path().string());
+            files.push_back(entry.path().string());
         }
     }
+    std::vector<std::thread> threads;
+    for (std::string filename : files)
+    {
+        threads.push_back(std::thread(Nesting, filename));
+    }
+    // 等待所有线程完成
+    for (std::thread &t : threads)
+    {
+        t.join();
+    }
+
+    return 0;
 }
